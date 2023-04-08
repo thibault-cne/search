@@ -1,23 +1,6 @@
 name: Unit tests
 
-on:
-  push:
-    branches: [master]
-    paths:
-      - ".github/workflows/*"
-      - "src/**"
-      - "Cargo.*"
-      - build.rs
-  pull_request:
-    branches: [master]
-    paths:
-      - ".github/workflows/*"
-      - "src/**"
-      - "Cargo.*"
-      - build.rs
-
-env:
-  CARGO_TERM_COLOR: always
+on: [push, pull_request]
 
 jobs:
   unit-tests:
