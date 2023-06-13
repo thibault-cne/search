@@ -63,7 +63,7 @@ impl<'dir> File<'dir> {
     }
 
     // Get size of a file in bytes
-    pub fn get_size(&self) -> usize {
-        1
+    pub fn get_size(&self) -> u64 {
+        self.metadata.len()
     }
 }

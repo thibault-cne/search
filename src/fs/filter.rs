@@ -52,7 +52,7 @@ pub enum DateFilter {
 
 pub struct FileSizeFilter {
     sign: Option<ComparisonSign>,
-    size: usize,
+    size: u64,
     _unit: Option<FileSizeUnit>,
 }
 
@@ -60,7 +60,7 @@ impl FileSizeFilter {
     pub fn from_bytes(bytes: &[u8]) -> Self {
         let sign = Self::parse_sign(bytes);
         let unit = Self::parse_unit(&bytes[bytes.len() - 1]);
-        let mut size = Self::parse_size(&sign, bytes);
+        let mut size = Self::parse_size(&unit, bytes);
 
         match &unit {
             Some(value) => {
@@ -88,7 +88,7 @@ impl FileSizeFilter {
     }
 
     fn parse_sign(bytes: &[u8]) -> Option<ComparisonSign> {
-        if bytes.starts_with(b">=") || bytes.starts_with(b"<=") {
+        if bytes.starts_with(b"+=") || bytes.starts_with(b"-=") {
             ComparisonSign::from_str(&bytes[..2])
         } else {
             ComparisonSign::from_str(&bytes[..1])
@@ -105,10 +105,10 @@ impl FileSizeFilter {
         }
     }
 
-    fn parse_size(unit: &Option<ComparisonSign>, bytes: &[u8]) -> usize {
+    fn parse_size(unit: &Option<FileSizeUnit>, bytes: &[u8]) -> u64 {
         let size: &[u8];
 
-        if bytes.starts_with(b">=") || bytes.starts_with(b"<=") {
+        if bytes.starts_with(b"+=") || bytes.starts_with(b"-=") {
             size = &bytes[2..]
         } else {
             size = &bytes[1..]
@@ -121,7 +121,7 @@ impl FileSizeFilter {
             None => &size,
         };
 
-        usize::from_be_bytes(size.try_into().unwrap_or(vec![0].try_into().unwrap()))
+        String::from_utf8_lossy(size).to_string().parse::<u64>().unwrap_or(0)
     }
 }
 
@@ -133,7 +133,7 @@ pub enum FileSizeUnit {
 }
 
 impl FileSizeUnit {
-    fn into_bytes(&self) -> usize {
+    fn into_bytes(&self) -> u64 {
         match self {
             Self::Byte => 1,
             Self::Kibibyte => 1024,
@@ -143,6 +143,7 @@ impl FileSizeUnit {
     }
 }
 
+#[derive(Debug)]
 pub enum ComparisonSign {
     Superior,
     Inferior,
@@ -155,10 +156,10 @@ impl ComparisonSign {
     pub fn from_str(sign: &[u8]) -> Option<Self> {
         match sign {
             b"=" => Some(Self::Equal),
-            b">=" => Some(Self::SuperiorOr),
-            b"<=" => Some(Self::InferiorOr),
-            b">" => Some(Self::Superior),
-            b"<" => Some(Self::Inferior),
+            b"+=" => Some(Self::SuperiorOr),
+            b"-=" => Some(Self::InferiorOr),
+            b"+" => Some(Self::Superior),
+            b"-" => Some(Self::Inferior),
             _ => None,
         }
     }
