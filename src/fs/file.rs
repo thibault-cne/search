@@ -61,4 +61,9 @@ impl<'dir> File<'dir> {
     pub fn is_file(&self) -> bool {
         self.metadata.is_file()
     }
+
+    // Get size of a file in bytes
+    pub fn get_size(&self) -> usize {
+        1
+    }
 }

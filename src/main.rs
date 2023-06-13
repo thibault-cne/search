@@ -81,7 +81,7 @@ impl <'args> Search<'args> {
 
         for dir_path in &self.input_paths {
             match File::from_args(PathBuf::from(dir_path), None, None) {
-                Err(e) => {
+                Err(_e) => {
                     exit_status = exits::RUNTIME_ERROR;
                 },
                 Ok(f) => {

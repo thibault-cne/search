@@ -1,4 +1,6 @@
-use crate::fs::filter::FileFilter;
+use std::os::unix::prelude::OsStrExt;
+
+use crate::fs::filter::{FileFilter, FileSizeFilter};
 use crate::options::{parser::MatchedFlags, errors::OptionsError, flags};
 
 impl FileFilter {
@@ -8,7 +10,15 @@ impl FileFilter {
         let only_dirs = matches.has(&flags::ONLY_DIRS)?;
         let include_dirs = matches.has(&flags::INCLUDE_DIRS)?;
         
-        let file_size = None;
+        let file_size_os_str = matches.get(&flags::SIZE)?;
+        let file_size = match file_size_os_str {
+            Some(os_str) => {
+                let bytes = os_str.as_bytes();
+
+                Some(FileSizeFilter::from_bytes(bytes))
+            },
+            None => None,
+        };
 
         // Get name flag if present.
         let name_os_str = matches.get(&flags::NAME)?;
