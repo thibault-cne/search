@@ -32,35 +32,35 @@ impl fmt::Display for Flag {
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Strictness {
-    // Throw an error when there is redudant arguments.
+    /// Throw an error when there is redudant arguments.
     ForbiddenRedudantArguments,
 
-    // Take the value of the last occurence of the argument
-    // if it's redundant.
+    /// Take the value of the last occurence of the argument
+    /// if it's redundant.
     UseLastArgument
 }
 
 #[derive(PartialEq)]
 pub enum TakesValue {
-    // This flags has to take a values
+    /// This flags has to take a values
     Necessary(Option<Values>),
 
-    // This flag has optional values
+    /// This flag has optional values
     Optional(Option<Values>),
 
-    // This flag has forbidden values
+    /// This flag has forbidden values
     Forbidden
 }
 
 #[derive(PartialEq)]
 pub struct Arg {
-    // The short name for the argument if it has one
+    /// The short name for the argument if it has one
     pub short: Option<ShortArg>,
 
-    // The long name for the argument. It is non-optional.
+    /// The long name for the argument. It is non-optional.
     pub long: LongArg,
 
-    // Whether this flag takes value or not.
+    /// Whether this flag takes value or not.
     pub takes_value: TakesValue
 }
 
@@ -190,7 +190,7 @@ impl Args {
                     //   -xabc          => ‘x=abc’
                     //   -abcdxyfgh     => ‘a’, ‘b’, ‘c’, ‘d’, ‘x=yfgh’
                     //   -abx def       => ‘a’, ‘b’, ‘x=def’
-                    //   -y             =>  error
+                    //   -y             => error
 
                     for (index, byte) in bytes.into_iter().enumerate().skip(1) {
                         let arg = self.lookup_short(*byte)?;

@@ -64,17 +64,23 @@ fn main() {
     }
 }
 
+/// The main struct that represents the search.
 pub struct Search<'args> {
-    // List of the free command-line arguments that should correspond to file
-    // names (anything that isn’t an option).
+    /// List of the free command-line arguments that should correspond to file
+    /// names (anything that isn’t an option).
     pub input_paths: Vec<&'args OsStr>,
 
+    /// The options given by the user.
     pub options: Options,
 
+    /// The writer to use to write the output.
     pub writer: io::Stdout,
 }
 
 impl <'args> Search<'args> {
+    /// Runs the search.
+    /// It iterates over the input paths and searches in each of them.
+    /// Each files are filtered by the options given by the user.
     pub fn run(mut self) -> io::Result<i32> {
         // Stores all dirs to search in
         let mut dirs: Vec<Dir> = Vec::new();
@@ -103,6 +109,7 @@ impl <'args> Search<'args> {
         self.print_matched_files(dirs, exit_status)
     }
 
+    /// Prints the matched files.
     pub fn print_matched_files(&mut self, dirs: Vec<Dir>, exit_status: i32) -> io::Result<i32> {
         let mut queue: VecDeque<Dir> = VecDeque::from(dirs);
 
@@ -141,6 +148,7 @@ impl <'args> Search<'args> {
     }
 }
 
+/// Exit codes for the program.
 mod exits {
     /// Exit code for when search runs OK.
     pub const SUCCESS: i32 = 0;

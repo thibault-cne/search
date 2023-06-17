@@ -12,10 +12,10 @@ pub struct FileFilter {
     pub include_dirs: bool,
     
     /// If present, only files with a size matching the filter will be matched.
-    pub file_size: Option<FileSizeFilter>,
+    pub size_filter: SizeFilter,
 
 
-    pub file_name: Option<FileNameFilter>,
+    pub name_filter: NameFilter,
 
     /// If present, only files with a date matching the filter will be matched.
     pub date_filter: Option<DateFilter>,
@@ -25,7 +25,7 @@ pub struct FileFilter {
 
 impl FileFilter {
     pub fn match_file(&self, file: &File) -> bool {
-        if self.file_name.is_some() && !self.file_name.as_ref().unwrap().match_file(file) {
+        if !self.name_filter.match_file(file) {
             return false;
         }
 
@@ -37,7 +37,7 @@ impl FileFilter {
             return false;
         }
 
-        if self.file_size.is_some() && !self.file_size.as_ref().unwrap().match_file(file) {
+        if !self.size_filter.match_file(file) {
             return false;
         }
 
@@ -49,19 +49,41 @@ impl FileFilter {
 /// A file name filter. This is used to filter files based on their name.
 /// The filter is a regular expression.
 #[derive(Debug)]
-pub struct FileNameFilter(Regex);
-
-
-impl FileNameFilter {
-    pub fn match_file(&self, file: &File) -> bool {
-        self.0.is_match(&file.name)
-    }
+pub enum NameFilter {
+    Unfiltered,
+    Regex(Regex),
 }
 
 
-impl From<Regex> for FileNameFilter {
+impl NameFilter {
+    pub fn match_file(&self, file: &File) -> bool {
+        match self {
+            Self::Unfiltered => true,
+            Self::Regex(regex) => regex.is_match(&file.name),
+        }
+    }
+}
+
+/// Implement the Default trait for FileNameFilter.
+/// The default value is Unfiltered.
+impl Default for NameFilter {
+    fn default() -> Self {
+        Self::Unfiltered
+    }
+}
+
+impl From<Regex> for NameFilter {
     fn from(regex: Regex) -> Self {
-        Self(regex)
+        Self::Regex(regex)
+    }
+}
+
+impl From<Option<Regex>> for NameFilter {
+    fn from(regex: Option<Regex>) -> Self {
+        match regex {
+            Some(value) => Self::Regex(value),
+            None => Self::Unfiltered,   
+        }
     }
 }
 
@@ -70,40 +92,27 @@ impl From<Regex> for FileNameFilter {
 pub enum DateFilter {
 }
 
-pub struct FileSizeFilter {
-    sign: Option<ComparisonSign>,
-    size: u64,
-    _unit: Option<FileSizeUnit>,
+/// A file size filter. This is used to filter files based on their size.
+/// The filter is a comparison between the file size and a given value.
+pub enum SizeFilter {
+    Unfiltered,
+    Equal(u64),
+    Inferior(u64),
+    Superior(u64),
+    SuperiorOrEqual(u64),
+    InferiorOrEqual(u64),
 }
 
-impl FileSizeFilter {
-    pub fn from_bytes(bytes: &[u8]) -> Self {
-        let sign = Self::parse_sign(bytes);
-        let unit = Self::parse_unit(&bytes[bytes.len() - 1]);
-        let mut size = Self::parse_size(&unit, bytes);
-
-        match &unit {
-            Some(value) => {
-                size *= value.into_bytes()
-            }
-            None => ()
-        }
-
-        Self {
-            sign,
-            size,
-            _unit: unit
-        }
-    }
-
+impl SizeFilter {
     pub fn match_file(&self, file: &File) -> bool {
-        match self.sign {
-            Some(ComparisonSign::Equal) | None if file.get_size() == self.size => true,
-            Some(ComparisonSign::Inferior) if file.get_size() < self.size => true,
-            Some(ComparisonSign::Superior) if file.get_size() > self.size => true,
-            Some(ComparisonSign::InferiorOr) if file.get_size() <= self.size => true,
-            Some(ComparisonSign::SuperiorOr) if file.get_size() >= self.size => true,
-            _ => false, 
+        match self {
+            Self::Unfiltered => true,
+            Self::Equal(size) if file.get_size() == *size => true,
+            Self::Inferior(size) if file.get_size() < *size => true,
+            Self::Superior(size) if file.get_size() > *size => true,
+            Self::InferiorOrEqual(size) if file.get_size() <= *size => true,
+            Self::SuperiorOrEqual(size) if file.get_size() >= *size => true,
+            _ => false,
         }
     }
 
@@ -142,6 +151,35 @@ impl FileSizeFilter {
         };
 
         String::from_utf8_lossy(size).to_string().parse::<u64>().unwrap_or(0)
+    }
+}
+
+impl From<&[u8]> for SizeFilter {
+    fn from(bytes: &[u8]) -> Self {
+        let sign = Self::parse_sign(bytes);
+        let unit = Self::parse_unit(&bytes[bytes.len() - 1]);
+        let mut size = Self::parse_size(&unit, bytes);
+
+        match &unit {
+            Some(value) => {
+                size *= value.into_bytes()
+            }
+            None => ()
+        }
+
+        match sign {
+            Some(ComparisonSign::Equal) | None => Self::Equal(size),
+            Some(ComparisonSign::Inferior) => Self::Inferior(size),
+            Some(ComparisonSign::Superior) => Self::Superior(size),
+            Some(ComparisonSign::InferiorOr) => Self::InferiorOrEqual(size),
+            Some(ComparisonSign::SuperiorOr) => Self::SuperiorOrEqual(size),
+        }
+    }
+}
+
+impl Default for SizeFilter {
+    fn default() -> Self {
+        Self::Unfiltered
     }
 }
 
