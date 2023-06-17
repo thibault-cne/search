@@ -15,7 +15,9 @@ use crate::options::help::HelpString;
 
 mod filter;
 
+/// A struct that represents the options given by the user.
 pub struct Options {
+    /// The filter to use to filter the files.
     pub filter: FileFilter,
 }
 

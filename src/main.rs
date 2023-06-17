@@ -52,6 +52,7 @@ fn main() {
         },
         OptionsResult::InvalidOptions(e) => {
             match e {
+                OptionsError::ArgumentNeedsValue(arg) => print!("Argument {} needs a value", arg),
                 OptionsError::BadArgument(arg, os_str) => print!("Bad argument for flag {}. Arg passed : {}", arg, os_str.to_str().unwrap_or("Error unsupported os_str")),
                 OptionsError::Duplicate(flag_1, flag_2) => print!("Duplicated flags : {} {}", flag_1, flag_2),
                 OptionsError::OptionsConflit(arg_1, arg_2) => print!("Conflit between args : {} {}", arg_1, arg_2),

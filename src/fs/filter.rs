@@ -2,16 +2,22 @@ use regex::Regex;
 
 use crate::fs::file::File;
 
+/// A file filter. This is used to filter files based on their properties.
 #[derive(Default)]
 pub struct FileFilter {
+    /// If true, only directories will be matched.
     pub only_dirs: bool,
 
+    /// If true, directories will be included in the search.
     pub include_dirs: bool,
     
+    /// If present, only files with a size matching the filter will be matched.
     pub file_size: Option<FileSizeFilter>,
 
-    pub reggex: Option<Regex>,
 
+    pub file_name: Option<FileNameFilter>,
+
+    /// If present, only files with a date matching the filter will be matched.
     pub date_filter: Option<DateFilter>,
 
     // pub mime_type: Option<str>
@@ -19,10 +25,8 @@ pub struct FileFilter {
 
 impl FileFilter {
     pub fn match_file(&self, file: &File) -> bool {
-        if self.reggex.is_some() {
-            if !self.match_filename(&file.name) {
-                return false;
-            }
+        if self.file_name.is_some() && !self.file_name.as_ref().unwrap().match_file(file) {
+            return false;
         }
 
         if self.only_dirs && !file.is_directory() {
@@ -39,12 +43,28 @@ impl FileFilter {
 
         true
     }
+}
 
-    pub fn match_filename(&self, file: &str) -> bool {
-        let reggex = self.reggex.as_ref().unwrap();
-        reggex.is_match(file)
+
+/// A file name filter. This is used to filter files based on their name.
+/// The filter is a regular expression.
+#[derive(Debug)]
+pub struct FileNameFilter(Regex);
+
+
+impl FileNameFilter {
+    pub fn match_file(&self, file: &File) -> bool {
+        self.0.is_match(&file.name)
     }
 }
+
+
+impl From<Regex> for FileNameFilter {
+    fn from(regex: Regex) -> Self {
+        Self(regex)
+    }
+}
+
 
 #[derive(Debug)]
 pub enum DateFilter {
